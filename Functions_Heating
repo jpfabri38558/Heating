@@ -1,0 +1,65 @@
+from dataclasses import dataclass
+from scipy.integrate import solve_ivp
+
+@dataclass
+class HeatingParameters:
+  """
+  Classe de parametros de aquecimento.
+
+  T0 - temperatura inicial do líquido (°C)
+  Q - potência de aquecimento (W)
+  U - coeficiente global de troca térmica (W/(m^2.°C))
+  A - área de troca térmica (m^2)
+  Ta - temperatura ambiente (°C)
+  m - massa do líquido (kg)
+  cp - calor específico do líquido (J/(kg.°C))
+  """
+  T0 : float = 25
+  Q : float = 5000
+  U : float = 150
+  A : float = 5
+  Ta : float = 25
+  m : float = 50
+  cp : float = 1670
+
+def HeatingModel(t, T, parameters=None):
+  """
+  Modelo para o cálculo da variação de temperatura do tanque no instante t.
+
+  dT/dt = (Q - U*A*(T-Ta))/(m*cp)
+
+  T - temperatura do tanque (°C)
+  t - instante de tempo (s)
+  parameters - parâmetros de aquecimento (T0, Q, U, A, Ta, m, cp)
+  """
+  if parameters is None:
+    parameters = HeatingParameters()
+
+  Q = parameters.Q
+  U = parameters.U
+  A = parameters.A
+  Ta = parameters.Ta
+  m = parameters.m
+  cp = parameters.cp
+
+  dTdt = (Q - U*A*(T-Ta))/(m*cp)
+
+  return dTdt
+
+def HeatingSim(t, parameters=None):
+  """
+  Simula o aquecimento do tanque ao longo do tempo.
+
+  t - tempo de simulação (s)
+  parameters - parâmetros de aquecimento (T0, Q, U, A, Ta, m, cp)
+  """
+  if parameters is None:
+    parameters = HeatingParameters()
+
+  T0 = parameters.T0
+
+  HeatingModelSim = lambda t, T: HeatingModel(t, T, parameters)
+
+  sol = solve_ivp(HeatingModelSim, [0, t], [T0], t_eval=None, args=None, method='RK45')
+
+  return sol.t, sol.y[0]
